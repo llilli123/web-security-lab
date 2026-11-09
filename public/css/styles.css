@@ -83,6 +83,18 @@ button:disabled{cursor:not-allowed;opacity:.4}
 .tag.red{background:var(--red-tint);color:var(--red)}
 .tag.green{background:var(--green-tint);color:var(--green)}
 
+/* ---------- Retícula de 12 columnas ----------
+   Encabezado: número 2 col · introducción 10 col
+   Contenido:  laboratorio 7 col · información 5 col
+   Medianil (gap) fijo de 24 px para alinear ambas filas. */
+.topic-head,.topic-layout{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--s5)}
+.topic-num{grid-column:1/span 2;font:900 clamp(3rem,6vw,5.5rem)/.9 var(--font-display);letter-spacing:-.06em;
+  color:transparent;-webkit-text-stroke:1.5px #c7cfdd;font-variant-numeric:tabular-nums;padding-top:var(--s1)}
+.topic-intro{grid-column:3/-1}
+.topic-layout{row-gap:var(--s5);margin-top:var(--s6)}
+.lab-card{grid-column:1/span 7}
+.info-card{grid-column:8/-1}
+
 /* ---------- Tarjetas ---------- */
 .card{background:var(--surface);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow)}
 .lab-card{padding:var(--s5)}
@@ -190,7 +202,14 @@ kbd{padding:1px 6px;border:1px solid var(--stroke);border-bottom-width:2px;borde
 .scrim{position:fixed;inset:0;z-index:49;background:rgba(20,33,61,.4)}
 
 /* ---------- Responsive ---------- */
+@media(max-width:980px){
+  .lab-card,.info-card{grid-column:1/-1}
+  .topic-num{grid-column:1/span 2}
+  .topic-intro{grid-column:3/-1}
+}
 @media(max-width:640px){
+  .topic-head{display:block}
+  .topic-num{font-size:var(--t-2xl);margin-bottom:var(--s2);-webkit-text-stroke-width:1px}
   .top-subtitle,.keyboard-tip{display:none}
   .topbar{height:56px;gap:var(--s3)}
   .stage{padding-top:var(--s5)}

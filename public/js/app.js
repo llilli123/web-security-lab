@@ -39,9 +39,14 @@ function goto(n){
 function cover(){return `<div class="cover"><div class="eyebrow">Tecnología de Internet II · Clase 05</div><h1 class="title">WEB SECURITY <span>LAB</span></h1><p>Una presentación que también es un laboratorio: descubre qué pasa cuando una web es vulnerable, activa su protección y repite la prueba.</p><div class="cover-chips"><span class="tag">20 temas</span><span class="tag real">6 prácticas funcionales</span><span class="tag">14 simulaciones</span><span class="tag">Modo vulnerable / protegido</span></div><button id="start-btn" class="btn blue cover-start">Comenzar exposición →</button><div class="presenters">${h(TEAM_NAMES)} · Universidad Central del Este · ISW-312</div></div>`;}
 function ending(){return `<div class="end"><div class="check-big">✓</div><div class="kicker">Conclusiones</div><h2>Seguridad en cada capa.</h2><p>Una defensa no basta. Seguridad significa verificar entradas, permisos, sesiones, consultas y configuraciones, y demostrar que las protecciones funcionan.</p><div class="end-list"><article><strong>Cliente</strong>Escape contextual, CSP, HTTPS y archivos confiables.</article><article><strong>Servidor</strong>Autorización, consultas parametrizadas y límites.</article><article><strong>Equipo</strong>Revisión, actualizaciones, auditorías y monitoreo.</article></div><button id="restart-btn" class="btn blue">Volver al inicio</button><div class="presenters">Prácticas en entornos ficticios y aislados · Investigación basada en OWASP, MDN e INCIBE.</div></div>`;}
 function topicView(t){
-  return `<div class="kicker">${h(categories.find(c=>c.id===t.category).name)} · Laboratorio ${String(t.n).padStart(2,'0')}/20</div>
-   <h1 class="h1">${h(t.name)}</h1><p class="summary">${h(t.what)}</p>
-   <div class="meta-row">${badge(t)}<span class="tag">Escenario: ${h(t.app)}</span><span class="tag">${t.type==='real'?'Backend / navegador':'Interacción en navegador'}</span></div>
+  return `<header class="topic-head">
+    <div class="topic-num" aria-hidden="true">${String(t.n).padStart(2,'0')}</div>
+    <div class="topic-intro">
+     <div class="kicker">${h(categories.find(c=>c.id===t.category).name)} · Laboratorio ${String(t.n).padStart(2,'0')}/20</div>
+     <h1 class="h1">${h(t.name)}</h1><p class="summary">${h(t.what)}</p>
+     <div class="meta-row">${badge(t)}<span class="tag">Escenario: ${h(t.app)}</span><span class="tag">${t.type==='real'?'Backend / navegador':'Interacción en navegador'}</span></div>
+    </div>
+   </header>
    <div class="topic-layout">
     <section class="card lab-card" aria-label="Laboratorio interactivo">
      <div class="section-head"><h2>Prueba interactiva</h2>
