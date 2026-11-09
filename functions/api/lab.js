@@ -15,18 +15,24 @@ const requireDB = env => {
   if (!env.LAB_DB) throw new Error('La base LAB_DB no está configurada. Lee README.md.');
   return env.LAB_DB;
 };
+// Cloudflare Workers (workerd) rechaza PBKDF2 con más de 100.000 iteraciones.
+const PBKDF2_ITERATIONS = 100000;
+const MAX_BODY = 4096;
 const hex = b => Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
 async function derive(password, salt) {
   const secret = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  return hex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt, iterations:210000 }, secret, 256));
+  return hex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt, iterations:PBKDF2_ITERATIONS }, secret, 256));
 }
 
 export async function onRequestPost(context) {
   const { request, env } = context;
   let data;
   try {
-    if (Number(request.headers.get('content-length') || 0) > 4096) return json({ error:'Entrada demasiado grande' },413);
-    data = await request.json();
+    // Se mide el cuerpo real: la cabecera Content-Length puede faltar (chunked) o mentir.
+    if (Number(request.headers.get('content-length') || 0) > MAX_BODY) return json({ error:'Entrada demasiado grande' },413);
+    const raw = await request.text();
+    if (new TextEncoder().encode(raw).length > MAX_BODY) return json({ error:'Entrada demasiado grande' },413);
+    try { data = JSON.parse(raw); } catch { return json({error:'JSON inválido'},400); }
     if (!data || typeof data !== 'object') return json({error:'JSON inválido'},400);
     const mode = data.mode === 'vulnerable' ? 'vulnerable' : 'protected';
     const realBad = mode === 'vulnerable' && localOnly(context);
@@ -96,7 +102,7 @@ export async function onRequestPost(context) {
       const hash2 = await derive(password,salt2);
       return json({kind:'real',success:false,title:'Hash real calculado correctamente en el servidor',
         details:[`PBKDF2 #1: ${hash1.slice(0,42)}…`,`PBKDF2 #2: ${hash2.slice(0,42)}…`,`Salts diferentes: ${hash1 !== hash2 ? 'sí' : 'no'}`],
-        explanation:'Este laboratorio usa PBKDF2-HMAC-SHA-256 con 210.000 iteraciones y dos salts aleatorios. No es bcrypt ni Argon2id; para proyectos nuevos se recomienda Argon2id cuando esté disponible.'});
+        explanation:'Este laboratorio usa PBKDF2-HMAC-SHA-256 con 100.000 iteraciones (máximo admitido por Cloudflare Workers) y dos salts aleatorios. No es bcrypt ni Argon2id; para proyectos nuevos se recomienda Argon2id cuando esté disponible.'});
     }
 
     if (topic === 'rate') {
@@ -108,6 +114,9 @@ export async function onRequestPost(context) {
       if (!/^[a-zA-Z0-9_-]{12,64}$/.test(client)) return json({error:'Identificador de laboratorio inválido'},400);
       const now = Math.floor(Date.now()/1000);
       const end = now + 30;
+      // Limpieza: los contadores vencidos hace más de 5 minutos se eliminan para
+      // que identificadores nuevos no hagan crecer la tabla sin límite.
+      await db.prepare('DELETE FROM demo_limits WHERE resets_at < ?').bind(now - 300).run();
       const row = await db.prepare(`
         INSERT INTO demo_limits(bucket, attempts, resets_at) VALUES (?, 1, ?)
         ON CONFLICT(bucket) DO UPDATE SET

@@ -49,7 +49,7 @@ Si no hay Internet durante la exposición, sirve el directorio `public` con un s
 ## Publicarlo desde un repositorio en Cloudflare Pages (recomendado)
 
 1. Sube **todos los archivos y carpetas del proyecto** a GitHub. No subas `node_modules`, `.wrangler` o secretos. **No subas solamente `public`**, porque Pages necesita la carpeta `functions` para generar el backend.
-2. En Cloudflare crea una **base D1** llamada `web-security-lab` (`npx wrangler login` y después `npx wrangler d1 create web-security-lab`). Copia el `database_id` devuelto y reemplaza el UUID `00000000-0000-0000-0000-000000000000` en `wrangler.toml`.
+2. En Cloudflare crea una **base D1** llamada `web-security-lab` (`npx wrangler login` y después `npx wrangler d1 create web-security-lab`). Copia el `database_id` devuelto en `wrangler.toml` (este repositorio ya tiene el ID de la base del equipo; cámbialo solo si creas una base nueva).
 3. Crea las tablas en D1 remota con `npm run db:remote`. Son datos **100% ficticios**.
 4. En el panel de Cloudflare, elige **Workers & Pages → Create → Pages → Connect to Git**, vincula tu repositorio y configura:
    - **Production branch:** `main`
@@ -103,7 +103,7 @@ Trabajen en ramas `frontend` y `backend` y reúnan los cambios en `main`. La com
 
 - **Nunca se expone un endpoint SQL o IDOR deliberadamente vulnerable al sitio público.** `LAB_MODE=local` **y** hostname `localhost/127.0.0.1` son condiciones necesarias para los ejemplos locales. No agregues `LAB_MODE=local` en Cloudflare.
 - La tabla `demo_users` incluye **PIN y códigos ficticios**, no contraseñas auténticas. En un sistema real no se guardarían contraseñas en texto claro.
-- **PBKDF2 es real**, pero **no es bcrypt ni Argon2id**. Para un sistema moderno de contraseñas se prefiere Argon2id cuando esté disponible. Esta elección evita sumar paquetes criptográficos al despliegue educativo.
+- **PBKDF2 es real** (100.000 iteraciones, el máximo que admite Cloudflare Workers), pero **no es bcrypt ni Argon2id**. Para un sistema moderno de contraseñas se prefiere Argon2id cuando esté disponible. Esta elección evita sumar paquetes criptográficos al despliegue educativo.
 - El laboratorio IDOR muestra **control de propiedad**, pero el actor `ana/luis` es seleccionado en pantalla; no implementa autenticación real. No uses este patrón como autenticación de producción.
 - El rate limiting es **didáctico, por identificador de demostración** que el cliente podría cambiar; no reemplaza un limitador robusto por IP, identidad y reglas antifraude. Requiere D1.
 - Las cabeceras se ven realmente en `/api/headers`; el modo vulnerable es una comparación simulada. HSTS solo tiene sentido bajo HTTPS.

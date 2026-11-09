@@ -5,7 +5,5 @@ compatibility_date = "2026-11-01"
 [[d1_databases]]
 binding = "LAB_DB"
 database_name = "web-security-lab"
-# Reemplazar este UUID con el ID de `npx wrangler d1 create web-security-lab`
-# Se usa un UUID neutro para permitir preparar el proyecto antes de crear D1.
+# ID de la base creada con `npx wrangler d1 create web-security-lab`.
 database_id = "a4394e80-e097-4ea5-96ac-06629a47252a"
-preview_database_id = "LAB_DB"

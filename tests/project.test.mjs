@@ -48,3 +48,26 @@ test('en modo público no se ejecuta la rama IDOR vulnerable',async()=>{
  const res=await runLab({request:new Request('https://example.pages.dev/api/lab',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:'idor',mode:'vulnerable',fields:{actor:'ana',invoiceId:'202'}})}),env:{LAB_MODE:'local',LAB_DB:mockDB}});
  assert.equal((await res.json()).kind,'simulation');
 });
+test('PBKDF2 respeta el máximo de 100.000 iteraciones de Cloudflare Workers',async()=>{
+ const original=crypto.subtle.deriveBits.bind(crypto.subtle);let used=0;
+ crypto.subtle.deriveBits=(algo,...rest)=>{used=algo.iterations;return original(algo,...rest)};
+ try{await runLab({request:body('hash','protected',{password:'x'}),env:{}});}finally{crypto.subtle.deriveBits=original}
+ assert.ok(used>0&&used<=100000,`iteraciones usadas: ${used}`);
+});
+test('rechaza cuerpos grandes aunque no envíen Content-Length',async()=>{
+ const big=JSON.stringify({topic:'hash',mode:'protected',fields:{password:'x'.repeat(5000)}});
+ const stream=new ReadableStream({start(c){c.enqueue(new TextEncoder().encode(big));c.close()}});
+ const res=await runLab({request:new Request('http://localhost/api/lab',{method:'POST',body:stream,duplex:'half'}),env:{}});
+ assert.equal(res.status,413);
+});
+test('JSON malformado responde 400',async()=>{
+ const res=await runLab({request:new Request('http://localhost/api/lab',{method:'POST',body:'{oops'}),env:{}});
+ assert.equal(res.status,400);
+});
+test('rate limiting limpia contadores vencidos y bloquea tras 4 intentos',async()=>{
+ const rows=new Map();const sql=[];
+ const mockDB={prepare(q){sql.push(q);return{bind:(...a)=>({run:async()=>{for(const [k,v] of rows) if(v.resets_at<a[0]) rows.delete(k)},
+  first:async()=>{const [bucket,end,now]=a;const r=rows.get(bucket);const n=!r||r.resets_at<=now?{attempts:1,resets_at:end}:{attempts:r.attempts+1,resets_at:r.resets_at};rows.set(bucket,n);return n}})}}};
+ let last;for(let i=0;i<5;i++) last=await runLab({request:body('rate','protected',{client:'student_abcdef123456'}),env:{LAB_DB:mockDB}});
+ assert.equal(last.status,429);assert.ok(sql.some(q=>/DELETE FROM demo_limits/.test(q)));
+});
