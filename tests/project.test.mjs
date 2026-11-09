@@ -48,3 +48,9 @@ test('en modo público no se ejecuta la rama IDOR vulnerable',async()=>{
  const res=await runLab({request:new Request('https://example.pages.dev/api/lab',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:'idor',mode:'vulnerable',fields:{actor:'ana',invoiceId:'202'}})}),env:{LAB_MODE:'local',LAB_DB:mockDB}});
  assert.equal((await res.json()).kind,'simulation');
 });
+test('PBKDF2 respeta el máximo de 100.000 iteraciones de Cloudflare Workers',async()=>{
+ const original=crypto.subtle.deriveBits.bind(crypto.subtle);let used=0;
+ crypto.subtle.deriveBits=(algo,...rest)=>{used=algo.iterations;return original(algo,...rest)};
+ try{await runLab({request:body('hash','protected',{password:'x'}),env:{}});}finally{crypto.subtle.deriveBits=original}
+ assert.ok(used>0&&used<=100000,`iteraciones usadas: ${used}`);
+});

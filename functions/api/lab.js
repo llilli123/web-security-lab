@@ -15,10 +15,12 @@ const requireDB = env => {
   if (!env.LAB_DB) throw new Error('La base LAB_DB no está configurada. Lee README.md.');
   return env.LAB_DB;
 };
+// Cloudflare Workers (workerd) rechaza PBKDF2 con más de 100.000 iteraciones.
+const PBKDF2_ITERATIONS = 100000;
 const hex = b => Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
 async function derive(password, salt) {
   const secret = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  return hex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt, iterations:210000 }, secret, 256));
+  return hex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt, iterations:PBKDF2_ITERATIONS }, secret, 256));
 }
 
 export async function onRequestPost(context) {
@@ -96,7 +98,7 @@ export async function onRequestPost(context) {
       const hash2 = await derive(password,salt2);
       return json({kind:'real',success:false,title:'Hash real calculado correctamente en el servidor',
         details:[`PBKDF2 #1: ${hash1.slice(0,42)}…`,`PBKDF2 #2: ${hash2.slice(0,42)}…`,`Salts diferentes: ${hash1 !== hash2 ? 'sí' : 'no'}`],
-        explanation:'Este laboratorio usa PBKDF2-HMAC-SHA-256 con 210.000 iteraciones y dos salts aleatorios. No es bcrypt ni Argon2id; para proyectos nuevos se recomienda Argon2id cuando esté disponible.'});
+        explanation:'Este laboratorio usa PBKDF2-HMAC-SHA-256 con 100.000 iteraciones (máximo admitido por Cloudflare Workers) y dos salts aleatorios. No es bcrypt ni Argon2id; para proyectos nuevos se recomienda Argon2id cuando esté disponible.'});
     }
 
     if (topic === 'rate') {
