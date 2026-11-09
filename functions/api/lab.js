@@ -17,6 +17,7 @@ const requireDB = env => {
 };
 // Cloudflare Workers (workerd) rechaza PBKDF2 con más de 100.000 iteraciones.
 const PBKDF2_ITERATIONS = 100000;
+const MAX_BODY = 4096;
 const hex = b => Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
 async function derive(password, salt) {
   const secret = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
@@ -27,8 +28,11 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   let data;
   try {
-    if (Number(request.headers.get('content-length') || 0) > 4096) return json({ error:'Entrada demasiado grande' },413);
-    data = await request.json();
+    // Se mide el cuerpo real: la cabecera Content-Length puede faltar (chunked) o mentir.
+    if (Number(request.headers.get('content-length') || 0) > MAX_BODY) return json({ error:'Entrada demasiado grande' },413);
+    const raw = await request.text();
+    if (new TextEncoder().encode(raw).length > MAX_BODY) return json({ error:'Entrada demasiado grande' },413);
+    try { data = JSON.parse(raw); } catch { return json({error:'JSON inválido'},400); }
     if (!data || typeof data !== 'object') return json({error:'JSON inválido'},400);
     const mode = data.mode === 'vulnerable' ? 'vulnerable' : 'protected';
     const realBad = mode === 'vulnerable' && localOnly(context);

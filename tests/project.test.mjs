@@ -54,3 +54,13 @@ test('PBKDF2 respeta el máximo de 100.000 iteraciones de Cloudflare Workers',as
  try{await runLab({request:body('hash','protected',{password:'x'}),env:{}});}finally{crypto.subtle.deriveBits=original}
  assert.ok(used>0&&used<=100000,`iteraciones usadas: ${used}`);
 });
+test('rechaza cuerpos grandes aunque no envíen Content-Length',async()=>{
+ const big=JSON.stringify({topic:'hash',mode:'protected',fields:{password:'x'.repeat(5000)}});
+ const stream=new ReadableStream({start(c){c.enqueue(new TextEncoder().encode(big));c.close()}});
+ const res=await runLab({request:new Request('http://localhost/api/lab',{method:'POST',body:stream,duplex:'half'}),env:{}});
+ assert.equal(res.status,413);
+});
+test('JSON malformado responde 400',async()=>{
+ const res=await runLab({request:new Request('http://localhost/api/lab',{method:'POST',body:'{oops'}),env:{}});
+ assert.equal(res.status,400);
+});
