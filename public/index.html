@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f6f7fb" />
+  <meta name="description" content="Presentación y laboratorio interactivo de 20 temas de seguridad web." />
+  <title>WEB SECURITY LAB | Seguridad web interactiva</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <div class="progress-track" aria-hidden="true"><div id="progress" class="progress-fill"></div></div>
+  <header class="topbar">
+    <button type="button" class="icon-btn" id="menu-btn" aria-label="Abrir índice" title="Ver índice">☰</button>
+    <div class="logo"><span class="logo-mark">◈</span> WEB SECURITY <span>LAB</span></div>
+    <span class="top-subtitle">ISW-312 · Seguridad web</span>
+    <span id="position" class="position">Portada</span>
+  </header>
+  <aside class="drawer" id="drawer" aria-label="Índice de temas" inert>
+    <div class="drawer-head"><strong>Índice del laboratorio</strong><button class="icon-btn" id="drawer-close" aria-label="Cerrar índice">✕</button></div>
+    <div id="topics-index"></div>
+  </aside>
+  <div id="scrim" class="scrim" hidden></div>
+  <main id="stage" class="stage" tabindex="-1" aria-live="polite"></main>
+  <footer class="navigation">
+    <button class="nav-btn" id="prev-btn">← Anterior</button>
+    <div class="keyboard-tip">Flechas ← → para navegar · <kbd>I</kbd> índice</div>
+    <button class="nav-btn primary" id="next-btn">Siguiente →</button>
+  </footer>
+</body>
+</html>
