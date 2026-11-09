@@ -5,10 +5,16 @@ const $ = id => document.getElementById(id);
 const stage=$('stage'), index=$('topics-index');
 const h=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 let at=-1, mode='vulnerable', lastValues={};
+// randomUUID solo existe en contextos seguros (HTTPS/localhost) y sessionStorage
+// puede lanzar en modo privado: ninguno de los dos debe dejar la página en blanco.
 const clientId = (()=>{
-  let key=sessionStorage.getItem('websec-demo-client');
-  if(!key){key='student_'+crypto.randomUUID().replaceAll('-','');sessionStorage.setItem('websec-demo-client',key)}
-  return key;
+  const fresh=()=>'student_'+(crypto.randomUUID?.().replaceAll('-','')
+    ?? Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join(''));
+  try{
+    let key=sessionStorage.getItem('websec-demo-client');
+    if(!key){key=fresh();sessionStorage.setItem('websec-demo-client',key)}
+    return key;
+  }catch{return fresh()}
 })();
 
 function badge(t){return `<span class="tag ${t.type==='real'?'real':'sim'}">${t.type==='real'?'PRÁCTICA PRINCIPAL':'SIMULACIÓN'}</span>`;}
