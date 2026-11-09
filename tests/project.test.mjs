@@ -64,3 +64,10 @@ test('JSON malformado responde 400',async()=>{
  const res=await runLab({request:new Request('http://localhost/api/lab',{method:'POST',body:'{oops'}),env:{}});
  assert.equal(res.status,400);
 });
+test('rate limiting limpia contadores vencidos y bloquea tras 4 intentos',async()=>{
+ const rows=new Map();const sql=[];
+ const mockDB={prepare(q){sql.push(q);return{bind:(...a)=>({run:async()=>{for(const [k,v] of rows) if(v.resets_at<a[0]) rows.delete(k)},
+  first:async()=>{const [bucket,end,now]=a;const r=rows.get(bucket);const n=!r||r.resets_at<=now?{attempts:1,resets_at:end}:{attempts:r.attempts+1,resets_at:r.resets_at};rows.set(bucket,n);return n}})}}};
+ let last;for(let i=0;i<5;i++) last=await runLab({request:body('rate','protected',{client:'student_abcdef123456'}),env:{LAB_DB:mockDB}});
+ assert.equal(last.status,429);assert.ok(sql.some(q=>/DELETE FROM demo_limits/.test(q)));
+});

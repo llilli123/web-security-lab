@@ -114,6 +114,9 @@ export async function onRequestPost(context) {
       if (!/^[a-zA-Z0-9_-]{12,64}$/.test(client)) return json({error:'Identificador de laboratorio inválido'},400);
       const now = Math.floor(Date.now()/1000);
       const end = now + 30;
+      // Limpieza: los contadores vencidos hace más de 5 minutos se eliminan para
+      // que identificadores nuevos no hagan crecer la tabla sin límite.
+      await db.prepare('DELETE FROM demo_limits WHERE resets_at < ?').bind(now - 300).run();
       const row = await db.prepare(`
         INSERT INTO demo_limits(bucket, attempts, resets_at) VALUES (?, 1, ?)
         ON CONFLICT(bucket) DO UPDATE SET
